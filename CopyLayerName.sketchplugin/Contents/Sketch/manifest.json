@@ -1,0 +1,24 @@
+{
+  "author" : "",
+  "commands" : [
+    {
+      "script" : "script.cocoascript",
+      "name" : "CopyLayerName",
+      "handlers" : {
+        "run" : "onRun"
+      },
+      "identifier" : "com.bohemiancoding.sketch.runscriptidentifier"
+    }
+  ],
+  "menu" : {
+    "title" : "😊CopyLayerName",
+    "items" : [
+      "com.bohemiancoding.sketch.runscriptidentifier"
+    ]
+  },
+  "identifier" : "com.example.sketch.68f782d8-d07a-4657-8451-23ce37466e34",
+  "version" : "1.0.0",
+  "description" : "拷贝图层名到剪贴板",
+  "authorEmail" : "hufang360@sina.com",
+  "name" : "CopyLayerName"
+}

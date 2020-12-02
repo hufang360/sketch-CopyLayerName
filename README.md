@@ -1,2 +1,6 @@
-# sketch-CopyLayerName
-拷贝图层名到剪贴板
+# CopyLayerName
+拷贝当前页面的图层名到剪贴板中。
+
+
+
+![intro](intro.png)
