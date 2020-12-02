@@ -1,0 +1,185 @@
+var sketch = require('sketch')
+var UI = require('sketch/ui')
+
+var document = sketch.getSelectedDocument()
+
+// 找出当前选中的页面
+var pages = document.pages
+var selectedIndex = -1
+for (var i = 0; i < pages.length; i++) {
+  if (pages[i].selected) {
+    selectedIndex = i
+    break
+  }
+}
+if (selectedIndex == -1) {
+  UI.message('没有选中任何页面!')
+  return
+}
+
+// 开始查找
+var layerCount = 0
+var typeFilter = ['Group','Artboard','Slice']
+var objArr = []
+var newObjArr = []
+
+var layersObj = pages[selectedIndex].layers
+findAGroup(layersObj)
+
+// 查找一个组下面的 layer 对象
+function findAGroup(layers, prefix = '', idPrefix='') {
+  for (var i = 0; i < layers.length; i++) {
+    layer = layers[i]
+
+    idStr = layer['id']
+    if (prefix != ''){
+      layerName = prefix + "/" + layer.name
+    }else{
+      layerName = layer.name
+    }
+    
+    
+    if (idPrefix!='') {
+      layerID = idPrefix + "__" + idStr
+      parentID = idPrefix
+    }else{
+      layerID = idStr
+      parentID = ''
+    }
+    objArr.push({
+      'id':idStr,
+      'parentID': parentID,
+      'type': layer.type,
+      'layerName': layerName,
+      'layerRawName': layer.name,
+      'selected':layer.selected
+    })
+    
+    var findex = typeFilter.indexOf(layer.type)
+    if (findex == -1) {
+      // console.log(layer.type + "    " + layerName + "    " + layer.selected)
+      layerCount += 1
+    }
+    // if (layerCount >= 15) {
+    //   console.log(layer)
+    // }
+    if (hasOwnKey(layer, 'layers'))
+      findAGroup(layer.layers, layerName, layerID)
+  }
+}
+
+// 输出名称信息
+var groupNames = []
+var ids = []
+var mID = 0
+for(var i=0; i<objArr.length; i++){
+  obj = objArr[i]
+
+  lSID = obj['parentID']
+  lType = obj['type']
+  lName = obj['layerName']
+  lRawName = obj['layerRawName']
+  // lSelected = obj['selected']
+
+  sArr = lName.split('/')
+  if(sArr.length==2){
+
+    // 过滤指定类型的对象
+    var findex = typeFilter.indexOf(lType)
+    if (findex != -1)
+      continue
+    
+    // 基于 id 进行编组（001 002作为前缀）
+    // n = sArr[0]
+    n = lSID
+    gIndex = groupNames.indexOf(n)
+    if (gIndex==-1) {
+      groupNames.push(n)
+      if(ids.length){
+        mID = ids[ids.length-1]
+        mID += 1
+      }else{
+        mID = 1
+      }
+      ids.push(mID)
+    } 
+    else {
+      mID = ids[gIndex]
+      // console.log(ids)
+    }
+    newObjArr.push({
+      'id':mID,
+      'layerName': lRawName
+    })
+  }
+}
+
+// 拷贝到剪贴板
+if (objArr.length){
+  finalClipStr = getLayername(objArr)
+  copyToPasteboard(finalClipStr)
+  UI.message('😊'+layerCount + " 个图层名称已拷贝，请粘贴到 表格 中")
+} else {
+  UI.message("在当前页面，没有找到图层！")
+}
+
+
+
+//----------------------
+// 格式化获得的图层名
+function getLayername(objArr){
+  var nameStr = "图层名称\t对象类型\t是否被选中"
+  for(var i=0; i<objArr.length; i++){
+    obj = objArr[i]
+    lType = obj['type']
+    lName = obj['layerName']
+    lSelected = obj['selected']
+    lType = transEn(lType)
+    lSelected = transBoo(lSelected)
+    nameStr += '\n' + lName + "\t" + lType + "\t" + lSelected
+  }
+  return nameStr
+}
+
+// 转换名称
+function transEn(enStr){
+  var aa = ['Group','Artboard','Slice','Image']
+  var bb = ['编组',"画板","切片","图像"]
+  var aIndex = aa.indexOf(enStr)
+  if (aIndex==-1)
+    return enStr
+  else
+    return bb[aIndex]
+}
+// 提示 boolean
+function transBoo(enBoo){
+  if (enBoo)
+    return '是'
+  else
+    return '否'
+}
+//----------------------
+
+
+// 公共方法 --------------------------------
+function hasOwnKey(obj, keyName) {
+  for (var key in obj) {
+    if (key == keyName)
+      return true
+  }
+  return false
+}
+function formatNumer(num){
+  if (num<10)
+    return "00" + num
+  else if(num<100)
+    return "0" + num
+  else
+    return '' + num
+}
+// 拷贝到剪贴板
+function copyToPasteboard(copyStr){
+  var pb = NSPasteboard.generalPasteboard()
+  pb.clearContents()
+  pb.writeObjects([copyStr])
+}
